@@ -1,0 +1,106 @@
+name: Pipeline CI/CD - Tests & Déploiement Production
+
+on:
+  push:
+    branches: ["main"]
+  pull_request:
+    branches: ["main"]
+
+permissions:
+  contents: write
+  pages: write
+  id-token: write
+
+concurrency:
+  group: "ci-cd-${{ github.ref }}"
+  cancel-in-progress: true
+
+jobs:
+  test-and-build:
+    name: 🧪 Tests Unitaires, Intégration & Build
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout du code
+        uses: actions/checkout@v4
+
+      - name: Configuration Node.js 20
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: 'npm'
+
+      - name: Installation des dépendances
+        run: npm ci
+
+      - name: Exécution des Tests Unitaires & Intégration (Vitest)
+        run: npm test
+
+      - name: Vérification du Build Vite Production
+        run: npm run build
+        env:
+          VITE_NEON_DATABASE_URL: ${{ secrets.VITE_NEON_DATABASE_URL }}
+          VITE_SUPABASE_URL: ${{ secrets.VITE_SUPABASE_URL }}
+          VITE_SUPABASE_ANON_KEY: ${{ secrets.VITE_SUPABASE_ANON_KEY }}
+
+      - name: Archiver le bundle dist
+        uses: actions/upload-artifact@v4
+        with:
+          name: dist-build
+          path: './dist'
+
+  sync-to-production:
+    name: 🚀 Synchronisation vers Branche Production
+    needs: test-and-build
+    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout du repo
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Synchronisation automatique sur la branche production
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git checkout production
+          git merge main --ff-only || git merge main -m "ci(release): fusion automatique main -> production après succès des tests"
+          git push origin production
+
+  deploy-pages:
+    name: 🌐 Déploiement GitHub Pages
+    needs: [test-and-build, sync-to-production]
+    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Checkout du code
+        uses: actions/checkout@v4
+
+      - name: Configuration Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: 'npm'
+
+      - name: Installation & Build Production
+        run: |
+          npm ci
+          npm run build
+        env:
+          VITE_NEON_DATABASE_URL: ${{ secrets.VITE_NEON_DATABASE_URL }}
+
+      - name: Configuration GitHub Pages
+        uses: actions/configure-pages@v5
+
+      - name: Upload de l'artefact dist
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: './dist'
+
+      - name: Déploiement sur GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
