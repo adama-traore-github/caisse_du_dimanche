@@ -29,13 +29,18 @@
         <button id="btnSwitchMode" class="btn-secondary" style="padding: 0.4rem 0.8rem; font-size: 0.8rem;">
           👁️ Mode Démo
         </button>
+
+        <!-- Bouton Hamburger (Visible uniquement sur Mobile) -->
+        <button id="mobileHamburgerBtn" class="hamburger-btn" aria-label="Ouvrir le menu de navigation" aria-expanded="false" aria-controls="tabsNav">
+          <span class="hamburger-icon">☰</span>
+        </button>
       </div>
     </div>
   </header>
 
   <!-- Bannière d'avertissement Mode Démo -->
   <div id="demoBanner" class="demo-banner">
-    <span>💡 <strong>Mode Démo / Visiteur :</strong> Vos modifications sont enregistrées localement dans votre navigateur et n'altèrent pas la vraie base de données.</span>
+    <span>💡 <strong>Mode Démo / Visiteur :</strong> Vos modifications sont enregistrées localement dans votre navigateur.</span>
     <button id="btnLoginBanner" class="btn-primary" style="padding: 0.35rem 0.75rem; font-size: 0.78rem;">
       🔐 Connexion Trésorier
     </button>
@@ -44,8 +49,8 @@
   <!-- Conteneur Principal -->
   <main class="main-layout">
 
-    <!-- Onglets de Navigation -->
-    <nav class="tabs-nav" aria-label="Navigation principale">
+    <!-- Onglets de Navigation (Menu Hamburger sur Mobile & Barre sur Desktop) -->
+    <nav class="tabs-nav" id="tabsNav" aria-label="Navigation principale">
       <button class="tab-btn active" id="tabSaisieBtn" data-target="saisieView">
         📅 Dimanches & Saisie
       </button>

@@ -14,7 +14,8 @@ import {
   loginUser,
   registerUserRequest,
   getCurrentUserSession,
-  setCurrentUserSession
+  setCurrentUserSession,
+  clearAllTransactionsData
 } from './lib/database.js';
 
 import { transactionService } from './services/transaction.service.js';
@@ -31,6 +32,8 @@ const appState = {
 
 // --- Sélecteurs DOM ---
 const btnSwitchMode = document.getElementById('btnSwitchMode');
+const mobileHamburgerBtn = document.getElementById('mobileHamburgerBtn');
+const tabsNav = document.getElementById('tabsNav');
 const demoBanner = document.getElementById('demoBanner');
 const btnLoginBanner = document.getElementById('btnLoginBanner');
 
@@ -272,6 +275,23 @@ function selectSunday(isoDate) {
 
 // --- Événements Navigation et Formulaires ---
 function setupEventListeners() {
+  // Menu Hamburger Mobile
+  mobileHamburgerBtn.addEventListener('click', (e) => {
+    e.stopPropagation();
+    const isOpen = tabsNav.classList.toggle('open');
+    mobileHamburgerBtn.setAttribute('aria-expanded', String(isOpen));
+  });
+
+  // Fermer le menu mobile en cliquant en dehors
+  document.addEventListener('click', (e) => {
+    if (tabsNav.classList.contains('open') &&
+        !tabsNav.contains(e.target) &&
+        !mobileHamburgerBtn.contains(e.target)) {
+      tabsNav.classList.remove('open');
+      mobileHamburgerBtn.setAttribute('aria-expanded', 'false');
+    }
+  });
+
   btnSwitchMode.addEventListener('click', () => {
     if (isDemoMode()) {
       openAuthModal();
@@ -349,7 +369,10 @@ function setupEventListeners() {
   btnSyntheseGoToSaisie.addEventListener('click', () => switchTab('saisieView'));
 
   btnResetForm.addEventListener('click', () => {
-    selectSunday(appState.selectedSundayIso);
+    inputCollecte.value = '';
+    inputRemis.value = '';
+    inputRemisA.value = '';
+    inputNote.value = '';
   });
 
   transactionForm.addEventListener('submit', (e) => {
@@ -408,6 +431,12 @@ function closeAuthModal() {
 }
 
 function switchTab(viewId) {
+  // Fermer le menu hamburger mobile après la sélection d'un onglet
+  tabsNav.classList.remove('open');
+  if (mobileHamburgerBtn) {
+    mobileHamburgerBtn.setAttribute('aria-expanded', 'false');
+  }
+
   tabSaisieBtn.classList.toggle('active', viewId === 'saisieView');
   tabSyntheseBtn.classList.toggle('active', viewId === 'syntheseView');
   tabBilanBtn.classList.toggle('active', viewId === 'bilanView');

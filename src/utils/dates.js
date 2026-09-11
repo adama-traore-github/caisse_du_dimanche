@@ -39,22 +39,22 @@ export function formatISODate(date) {
 }
 
 /**
- * Génère la liste des dimanches depuis le 1er dimanche de septembre jusqu'à 8 semaines dans le futur
+ * Génère la liste des dimanches depuis le 1er dimanche de septembre sur une période de N mois
  * @param {number} startYear 
+ * @param {number} totalMonths
  * @returns {Array<{ isoDate: string, label: string, monthKey: string, formattedShort: string }>}
  */
-export function generateSundaysList(startYear = new Date().getFullYear()) {
+export function generateSundaysList(startYear = new Date().getFullYear(), totalMonths = 12) {
     const firstSunday = getFirstSundayOfSeptember(startYear);
-    const today = new Date();
     
-    // On génère jusqu me au dernier dimanche du mois en cours + 4 dimanches à venir
-    const futureLimit = new Date(today);
-    futureLimit.setDate(today.getDate() + 28);
+    // Calcul de la date limite (N mois après le début)
+    const limitDate = new Date(firstSunday);
+    limitDate.setMonth(limitDate.getMonth() + totalMonths);
 
     const sundays = [];
     let current = new Date(firstSunday);
 
-    while (current <= futureLimit || sundays.length < 5) {
+    while (current < limitDate) {
         const isoDate = formatISODate(current);
         const monthKey = `${current.getFullYear()}-${String(current.getMonth() + 1).padStart(2, '0')}`;
         

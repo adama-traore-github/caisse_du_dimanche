@@ -259,3 +259,19 @@ export async function deleteTransaction(dateDimanche) {
     return;
   }
 }
+
+/**
+ * Remet toutes les données de caisse à zéro (Vide la base démo et Postgres)
+ */
+export async function clearAllTransactionsData() {
+  localStorage.removeItem(LOCAL_STORAGE_KEY);
+  localStorage.removeItem('caisse_last_treasurer');
+
+  if (isNeonConfigured && neonSql) {
+    try {
+      await neonSql`TRUNCATE TABLE transactions_dimanche`;
+    } catch (e) {
+      console.error('Erreur réinitialisation Neon:', e);
+    }
+  }
+}

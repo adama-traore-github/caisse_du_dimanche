@@ -74,7 +74,7 @@ export class TransactionService {
     const session = authService.getCurrentSession();
     if (session && session.nom) return session.nom;
 
-    return 'M. Jean (Trésorier)';
+    return '';
   }
 }
 
