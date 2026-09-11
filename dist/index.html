@@ -1,0 +1,271 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="description" content="Gestionnaire de caisse et de dons du dimanche. Suivi des collectes, des remises de fonds et bilans mensuels." />
+  <title>Caisse du Dimanche | Suivi des Dons & Remises</title>
+
+  <!-- Google Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  
+  <script type="module" crossorigin src="./assets/index-BysyEddz.js"></script>
+  <link rel="stylesheet" crossorigin href="./assets/index-DjAxTcgy.css">
+</head>
+<body>
+
+  <!-- En-tête de l'application -->
+  <header class="app-header">
+    <div class="header-container">
+      <div class="brand">
+        <div class="brand-icon">⛪</div>
+        <div>
+          <h1 class="brand-title">Caisse du Dimanche</h1>
+          <div class="brand-subtitle">Gestion & Trésorerie des Dons</div>
+        </div>
+      </div>
+
+      <div class="status-badge" id="storageStatusBadge" title="Mode de stockage">
+        <div class="status-dot" id="statusDot"></div>
+        <span id="statusText">Mode Local Storage</span>
+      </div>
+    </div>
+  </header>
+
+  <!-- Conteneur Principal -->
+  <main class="main-layout">
+
+    <!-- Onglets de Navigation (Ordre : Saisie -> Synthèse -> Bilan) -->
+    <nav class="tabs-nav" aria-label="Navigation principale">
+      <button class="tab-btn active" id="tabSaisieBtn" data-target="saisieView">
+        📅 Dimanches & Saisie
+      </button>
+      <button class="tab-btn" id="tabSyntheseBtn" data-target="syntheseView">
+        📊 Synthèse
+      </button>
+      <button class="tab-btn" id="tabBilanBtn" data-target="bilanView">
+        📋 Bilan Mensuel
+      </button>
+    </nav>
+
+    <!-- SECTION 1 : SAISIE ET SELECTION PAR DIMANCHE (PAR DÉFAUT) -->
+    <section id="saisieView" class="view-section active">
+      <div class="grid-two-columns">
+        
+        <!-- Sidebar : Liste des dimanches -->
+        <aside class="sundays-sidebar">
+          <div class="sidebar-title">
+            <span>Dimanches</span>
+            <span style="font-size: 0.78rem; color: var(--text-muted);">depuis Sept.</span>
+          </div>
+          <div class="sundays-list" id="sundaysListContainer">
+            <!-- Rempli dynamiquement en JS -->
+          </div>
+        </aside>
+
+        <!-- Formulaire de saisie -->
+        <article class="form-card">
+          <div class="form-header">
+            <h2 class="form-title" id="formCurrentDateTitle">Dimanche 6 Septembre 2026</h2>
+            <p class="form-subtitle">Enregistrer ou modifier les montants de la collecte</p>
+          </div>
+
+          <form id="transactionForm">
+            <input type="hidden" id="inputDateDimanche" name="date_dimanche" value="" />
+
+            <div class="form-row-two">
+              <div class="form-group">
+                <label class="form-label" for="inputCollecte">
+                  <span>💵 Argent Collecté</span>
+                </label>
+                <div class="form-input-currency">
+                  <input type="number" id="inputCollecte" name="argent_collecte" class="form-input" min="0" step="any" placeholder="0" required />
+                  <span class="currency-addon">FCFA</span>
+                </div>
+              </div>
+
+              <div class="form-group">
+                <label class="form-label" for="inputRemis">
+                  <span>🤲 Argent Remis</span>
+                </label>
+                <div class="form-input-currency">
+                  <input type="number" id="inputRemis" name="argent_remis" class="form-input" min="0" step="any" placeholder="0" required />
+                  <span class="currency-addon">FCFA</span>
+                </div>
+              </div>
+            </div>
+
+            <div class="form-row-two" style="margin-top: 1rem;">
+              <div class="form-group">
+                <label class="form-label" for="inputRemisA">
+                  <span>👤 Remis à (Trésorier / Gardien)</span>
+                </label>
+                <input type="text" id="inputRemisA" name="remis_a" class="form-input" placeholder="Ex: M. Jean / Sœur Marie" required />
+              </div>
+
+              <div class="form-group">
+                <label class="form-label" for="calcEcartPreview">
+                  <span>⚖️ Écart de la journée</span>
+                </label>
+                <div class="form-input" id="calcEcartPreview" style="background: rgba(255,255,255,0.03); font-weight: 700;">
+                  0 FCFA
+                </div>
+              </div>
+            </div>
+
+            <div class="form-group" style="margin-top: 1rem;">
+              <label class="form-label" for="inputNote">
+                <span>📝 Observations / Notes (Optionnel)</span>
+              </label>
+              <input type="text" id="inputNote" name="note" class="form-input" placeholder="Ex: Quête spéciale travaux..." />
+            </div>
+
+            <div class="form-actions">
+              <button type="button" class="btn-secondary" id="btnResetForm">Réinitialiser</button>
+              <button type="submit" class="btn-primary" id="btnSaveTransaction">
+                💾 Enregistrer la journée
+              </button>
+            </div>
+          </form>
+        </article>
+
+      </div>
+    </section>
+
+    <!-- SECTION 2 : SYNTHÈSE (CARTES PRINCIPALES) -->
+    <section id="syntheseView" class="view-section">
+      <div class="synthese-header" style="margin-bottom: 1.5rem;">
+        <h2 class="form-title">Synthèse Générale</h2>
+        <p class="form-subtitle">Vue d'ensemble de la caisse et du solde actuel</p>
+      </div>
+
+      <!-- Cartes de Statistiques Globales -->
+      <div class="stats-grid" aria-label="Statistiques de la caisse">
+        <div class="stat-card emerald">
+          <div class="stat-header">
+            <span class="stat-title">Total Collecté</span>
+            <span class="stat-icon">💰</span>
+          </div>
+          <div class="stat-value" id="statTotalCollecte">0 FCFA</div>
+          <div class="stat-sub" id="statSubCollecte">Cumul des dons enregistrés</div>
+        </div>
+
+        <div class="stat-card amber">
+          <div class="stat-header">
+            <span class="stat-title">Total Remis</span>
+            <span class="stat-icon">🤝</span>
+          </div>
+          <div class="stat-value" id="statTotalRemis">0 FCFA</div>
+          <div class="stat-sub" id="statSubRemis">Remis aux trésoriers</div>
+        </div>
+
+        <div class="stat-card" id="cardEcart">
+          <div class="stat-header">
+            <span class="stat-title">Reste en Caisse</span>
+            <span class="stat-icon">🏦</span>
+          </div>
+          <div class="stat-value" id="statResteCaisse">0 FCFA</div>
+          <div class="stat-sub" id="statSubReste">Solde disponible (Collecté - Remis)</div>
+        </div>
+      </div>
+
+      <!-- Aperçu Rapide pour Mobile -->
+      <div class="form-card" style="margin-top: 1rem;">
+        <div class="form-header" style="display: flex; justify-content: space-between; align-items: center;">
+          <div>
+            <h3 style="font-family: var(--font-heading); font-size: 1.15rem;">Dernière Saisie</h3>
+            <p class="form-subtitle" id="syntheseLastSundayLabel">Dimanche le plus récent</p>
+          </div>
+          <button class="btn-primary" id="btnSyntheseGoToSaisie" style="padding: 0.6rem 1rem; font-size: 0.85rem;">
+            ✏️ Saisir un dimanche
+          </button>
+        </div>
+        <div id="syntheseLastSundayContent" style="padding-top: 0.5rem;">
+          <!-- Contenu rempli dynamiquement -->
+        </div>
+      </div>
+    </section>
+
+    <!-- SECTION 3 : BILAN MENSUEL -->
+    <section id="bilanView" class="view-section">
+      <div class="monthly-card">
+        <div class="monthly-toolbar">
+          <div>
+            <h2 class="form-title">Bilan par Mois</h2>
+            <p class="form-subtitle">Synthèse et détails des remises de fonds par mois</p>
+          </div>
+
+          <div style="display: flex; gap: 1rem; align-items: center; flex-wrap: wrap;">
+            <select id="selectMonthFilter" class="select-month" aria-label="Filtrer par mois">
+              <!-- Options générées dynamiquement -->
+            </select>
+
+            <div class="export-btns">
+              <button class="btn-secondary" id="btnExportCSV" title="Télécharger sous format CSV">
+                📥 CSV
+              </button>
+              <button class="btn-primary" id="btnPrintPDF" title="Imprimer le bilan">
+                🖨️ Imprimer / PDF
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Tableau des transactions -->
+        <div class="table-responsive">
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th>Dimanche</th>
+                <th>Argent Collecté</th>
+                <th>Argent Remis</th>
+                <th>Écart / Caisse</th>
+                <th>Remis à</th>
+                <th>Note</th>
+                <th style="text-align: right;">Action</th>
+              </tr>
+            </thead>
+            <tbody id="monthlyTableBody">
+              <!-- Rempli dynamiquement -->
+            </tbody>
+            <tfoot id="monthlyTableFooter">
+              <!-- Total du mois -->
+            </tfoot>
+          </table>
+        </div>
+      </div>
+    </section>
+
+  </main>
+
+  <!-- MODAL CODE PIN DE SECURITE -->
+  <div class="modal-overlay" id="pinModal">
+    <div class="modal-box">
+      <h3 style="font-family: var(--font-heading); font-size: 1.25rem;">🔐 Sécurité Responsable</h3>
+      <p style="font-size: 0.88rem; color: var(--text-muted);">
+        Entrez le code de confirmation pour enregistrer ou modifier ce dimanche. (Code par défaut: <strong>1234</strong>)
+      </p>
+
+      <div class="form-group">
+        <label class="form-label" for="inputPin">Code PIN Trésorerie</label>
+        <input type="password" id="inputPin" class="form-input" placeholder="••••" maxlength="6" />
+      </div>
+
+      <div style="display: flex; gap: 0.5rem; justify-content: flex-end;">
+        <button class="btn-secondary" id="btnCancelPin">Annuler</button>
+        <button class="btn-primary" id="btnConfirmPin">Valider</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- TOAST DE NOTIFICATION -->
+  <div id="toastNotification" class="toast"></div>
+
+  <!-- Footer -->
+  <footer class="app-footer">
+    Caisse du Dimanche &bull; Application de Trésorerie Sécurisée
+  </footer>
+
+</body>
+</html>
