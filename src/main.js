@@ -31,9 +31,6 @@ const appState = {
 
 // --- Sélecteurs DOM ---
 const btnSwitchMode = document.getElementById('btnSwitchMode');
-const storageStatusBadge = document.getElementById('storageStatusBadge');
-const statusDot = document.getElementById('statusDot');
-const statusText = document.getElementById('statusText');
 const demoBanner = document.getElementById('demoBanner');
 const btnLoginBanner = document.getElementById('btnLoginBanner');
 
@@ -116,20 +113,12 @@ document.addEventListener('DOMContentLoaded', async () => {
 });
 
 function updateUIStateBadge() {
-  const provider = getActiveStorageProvider();
   const demoActive = isDemoMode();
 
   if (demoActive) {
-    statusDot.classList.remove('connected');
-    statusText.textContent = 'Mode Démo (Local Storage)';
-    storageStatusBadge.title = 'Les modifications sont stockées dans votre navigateur uniquement';
     btnSwitchMode.textContent = '🔐 Espace Trésorerie';
     demoBanner.style.display = 'flex';
   } else {
-    const session = getCurrentUserSession();
-    statusDot.classList.add('connected');
-    statusText.textContent = session ? `Trésorerie: ${session.nom}` : provider;
-    storageStatusBadge.title = `Connecté à ${provider}`;
     btnSwitchMode.textContent = '👁️ Mode Démo Visiteur';
     demoBanner.style.display = 'none';
   }
