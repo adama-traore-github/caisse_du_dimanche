@@ -32,9 +32,13 @@ jobs:
       - name: Installation des dépendances
         run: npm ci
 
+      - name: Exécution de la suite de tests unitaires et d'intégration
+        run: npm test
+
       - name: Build du projet Vite
         run: npm run build
         env:
+          VITE_NEON_DATABASE_URL: ${{ secrets.VITE_NEON_DATABASE_URL }}
           VITE_SUPABASE_URL: ${{ secrets.VITE_SUPABASE_URL }}
           VITE_SUPABASE_ANON_KEY: ${{ secrets.VITE_SUPABASE_ANON_KEY }}
 
