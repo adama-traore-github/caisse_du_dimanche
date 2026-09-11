@@ -1,4 +1,4 @@
--- Schema SQL pour la base de données "Caisse du Dimanche" (Supabase / PostgreSQL)
+-- Schema SQL pour la base de données "Caisse du Dimanche" (Neon Postgres / Supabase)
 
 CREATE TABLE IF NOT EXISTS public.transactions_dimanche (
     id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
@@ -11,21 +11,15 @@ CREATE TABLE IF NOT EXISTS public.transactions_dimanche (
     updated_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL
 );
 
--- Indexation pour recherche rapide par date
+-- Table des utilisateurs trésoriers autorisés
+CREATE TABLE IF NOT EXISTS public.utilisateurs_autorises (
+    id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+    nom TEXT NOT NULL,
+    nom_utilisateur TEXT NOT NULL UNIQUE,
+    mot_de_passe TEXT NOT NULL,
+    est_valide BOOLEAN DEFAULT true,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL
+);
+
+-- Indexation pour recherche rapide
 CREATE INDEX IF NOT EXISTS idx_transactions_date ON public.transactions_dimanche (date_dimanche DESC);
-
--- Activation du Row Level Security (RLS)
-ALTER TABLE public.transactions_dimanche ENABLE ROW LEVEL SECURITY;
-
--- Politique : Lecture autorisée pour tout utilisateur ayant la clé anon
-CREATE POLICY "Permettre la lecture publique"
-    ON public.transactions_dimanche
-    FOR SELECT
-    USING (true);
-
--- Politique : Insertion/Modification autorisée pour les utilisateurs authentifiés ou avec rôle valide
-CREATE POLICY "Permettre la modification aux utilisateurs autorisés"
-    ON public.transactions_dimanche
-    FOR ALL
-    USING (auth.role() = 'authenticated' OR auth.role() = 'anon')
-    WITH CHECK (argent_collecte >= 0 AND argent_remis >= 0);

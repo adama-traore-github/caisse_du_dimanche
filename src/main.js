@@ -8,11 +8,16 @@ import {
 import {
   fetchTransactions,
   saveTransaction,
-  deleteTransaction,
   getActiveStorageProvider,
-  isNeonConfigured,
-  isSupabaseConfigured
+  isDemoMode,
+  setDemoMode,
+  loginUser,
+  registerUserRequest,
+  getCurrentUserSession,
+  setCurrentUserSession
 } from './lib/database.js';
+
+import { transactionService } from './services/transaction.service.js';
 
 // --- State de l'application ---
 const appState = {
@@ -25,9 +30,12 @@ const appState = {
 };
 
 // --- Sélecteurs DOM ---
+const btnSwitchMode = document.getElementById('btnSwitchMode');
 const storageStatusBadge = document.getElementById('storageStatusBadge');
 const statusDot = document.getElementById('statusDot');
 const statusText = document.getElementById('statusText');
+const demoBanner = document.getElementById('demoBanner');
+const btnLoginBanner = document.getElementById('btnLoginBanner');
 
 const tabSaisieBtn = document.getElementById('tabSaisieBtn');
 const tabSyntheseBtn = document.getElementById('tabSyntheseBtn');
@@ -53,7 +61,6 @@ const inputDateDimanche = document.getElementById('inputDateDimanche');
 const inputCollecte = document.getElementById('inputCollecte');
 const inputRemis = document.getElementById('inputRemis');
 const inputRemisA = document.getElementById('inputRemisA');
-const calcEcartPreview = document.getElementById('calcEcartPreview');
 const inputNote = document.getElementById('inputNote');
 const btnResetForm = document.getElementById('btnResetForm');
 const btnSaveTransaction = document.getElementById('btnSaveTransaction');
@@ -64,6 +71,23 @@ const monthlyTableFooter = document.getElementById('monthlyTableFooter');
 const btnExportCSV = document.getElementById('btnExportCSV');
 const btnPrintPDF = document.getElementById('btnPrintPDF');
 
+// Modals DOM
+const authModal = document.getElementById('authModal');
+const btnCloseAuthModal = document.getElementById('btnCloseAuthModal');
+const authLoginForm = document.getElementById('authLoginForm');
+const authRegisterForm = document.getElementById('authRegisterForm');
+const btnShowRegister = document.getElementById('btnShowRegister');
+const btnShowLogin = document.getElementById('btnShowLogin');
+
+const loginUsername = document.getElementById('loginUsername');
+const loginPassword = document.getElementById('loginPassword');
+const btnSubmitLogin = document.getElementById('btnSubmitLogin');
+
+const regNom = document.getElementById('regNom');
+const regUsername = document.getElementById('regUsername');
+const regPassword = document.getElementById('regPassword');
+const btnSubmitRegister = document.getElementById('btnSubmitRegister');
+
 const pinModal = document.getElementById('pinModal');
 const inputPin = document.getElementById('inputPin');
 const btnCancelPin = document.getElementById('btnCancelPin');
@@ -72,7 +96,7 @@ const toastNotification = document.getElementById('toastNotification');
 
 // --- Initialisation ---
 document.addEventListener('DOMContentLoaded', async () => {
-  initStorageBadge();
+  updateUIStateBadge();
   setupEventListeners();
   
   // Générer la liste des dimanches à partir de septembre de l'année en cours
@@ -91,16 +115,23 @@ document.addEventListener('DOMContentLoaded', async () => {
   renderSyntheseQuickView();
 });
 
-function initStorageBadge() {
+function updateUIStateBadge() {
   const provider = getActiveStorageProvider();
-  if (isNeonConfigured || isSupabaseConfigured) {
-    statusDot.classList.add('connected');
-    statusText.textContent = provider;
-    storageStatusBadge.title = `Connecté à ${provider}`;
-  } else {
+  const demoActive = isDemoMode();
+
+  if (demoActive) {
     statusDot.classList.remove('connected');
-    statusText.textContent = 'Mode Local Storage';
-    storageStatusBadge.title = 'Stockage local (Ajoutez VITE_NEON_DATABASE_URL ou VITE_SUPABASE_URL)';
+    statusText.textContent = 'Mode Démo (Local Storage)';
+    storageStatusBadge.title = 'Les modifications sont stockées dans votre navigateur uniquement';
+    btnSwitchMode.textContent = '🔐 Espace Trésorerie';
+    demoBanner.style.display = 'flex';
+  } else {
+    const session = getCurrentUserSession();
+    statusDot.classList.add('connected');
+    statusText.textContent = session ? `Trésorerie: ${session.nom}` : provider;
+    storageStatusBadge.title = `Connecté à ${provider}`;
+    btnSwitchMode.textContent = '👁️ Mode Démo Visiteur';
+    demoBanner.style.display = 'none';
   }
 }
 
@@ -237,44 +268,96 @@ function selectSunday(isoDate) {
   if (existing) {
     inputCollecte.value = existing.argent_collecte ?? '';
     inputRemis.value = existing.argent_remis ?? '';
-    inputRemisA.value = existing.remis_a ?? '';
+    inputRemisA.value = existing.remis_a ?? transactionService.getSuggestedTreasurer(appState.transactionsMap);
     inputNote.value = existing.note ?? '';
   } else {
     inputCollecte.value = '';
     inputRemis.value = '';
-    inputRemisA.value = '';
+    inputRemisA.value = transactionService.getSuggestedTreasurer(appState.transactionsMap);
     inputNote.value = '';
   }
 
-  updateLiveEcartPreview();
   renderSundaysSidebar();
   renderSyntheseQuickView();
 }
 
-function updateLiveEcartPreview() {
-  const collecte = parseFloat(inputCollecte.value) || 0;
-  const remis = parseFloat(inputRemis.value) || 0;
-  const diff = collecte - remis;
-
-  calcEcartPreview.textContent = formatMoney(diff);
-  if (diff > 0) {
-    calcEcartPreview.style.color = 'var(--emerald)';
-  } else if (diff < 0) {
-    calcEcartPreview.style.color = 'var(--rose)';
-  } else {
-    calcEcartPreview.style.color = 'var(--text-main)';
-  }
-}
-
 // --- Événements Navigation et Formulaires ---
 function setupEventListeners() {
+  btnSwitchMode.addEventListener('click', () => {
+    if (isDemoMode()) {
+      openAuthModal();
+    } else {
+      setDemoMode(true);
+      setCurrentUserSession(null);
+      updateUIStateBadge();
+      reloadTransactions();
+      showToast('Bascule en Mode Démo (Données locales).');
+    }
+  });
+
+  btnLoginBanner.addEventListener('click', openAuthModal);
+  btnCloseAuthModal.addEventListener('click', closeAuthModal);
+
+  btnShowRegister.addEventListener('click', (e) => {
+    e.preventDefault();
+    authLoginForm.style.display = 'none';
+    authRegisterForm.style.display = 'block';
+  });
+
+  btnShowLogin.addEventListener('click', (e) => {
+    e.preventDefault();
+    authRegisterForm.style.display = 'none';
+    authLoginForm.style.display = 'block';
+  });
+
+  btnSubmitLogin.addEventListener('click', async (e) => {
+    e.preventDefault();
+    const username = loginUsername.value;
+    const password = loginPassword.value;
+
+    try {
+      btnSubmitLogin.disabled = true;
+      btnSubmitLogin.textContent = 'Connexion...';
+
+      const user = await loginUser(username, password);
+      showToast(`Bienvenue ${user.nom} ! Connexion réussie à Neon Postgres.`, 'success');
+      closeAuthModal();
+      updateUIStateBadge();
+      await reloadTransactions();
+      selectSunday(appState.selectedSundayIso);
+    } catch (err) {
+      showToast(err.message || 'Erreur de connexion.', 'error');
+    } finally {
+      btnSubmitLogin.disabled = false;
+      btnSubmitLogin.textContent = 'Se Connecter à la Base Neon';
+    }
+  });
+
+  btnSubmitRegister.addEventListener('click', async (e) => {
+    e.preventDefault();
+    try {
+      btnSubmitRegister.disabled = true;
+      btnSubmitRegister.textContent = 'Envoi...';
+
+      const msg = await registerUserRequest(regNom.value, regUsername.value, regPassword.value);
+      showToast(msg, 'success');
+      regNom.value = '';
+      regUsername.value = '';
+      regPassword.value = '';
+      authRegisterForm.style.display = 'none';
+      authLoginForm.style.display = 'block';
+    } catch (err) {
+      showToast(err.message || 'Erreur lors de la demande.', 'error');
+    } finally {
+      btnSubmitRegister.disabled = false;
+      btnSubmitRegister.textContent = 'Envoyer la Demande d\'Accès';
+    }
+  });
+
   tabSaisieBtn.addEventListener('click', () => switchTab('saisieView'));
   tabSyntheseBtn.addEventListener('click', () => switchTab('syntheseView'));
   tabBilanBtn.addEventListener('click', () => switchTab('bilanView'));
   btnSyntheseGoToSaisie.addEventListener('click', () => switchTab('saisieView'));
-
-  inputCollecte.addEventListener('input', updateLiveEcartPreview);
-  inputRemis.addEventListener('input', updateLiveEcartPreview);
 
   btnResetForm.addEventListener('click', () => {
     selectSunday(appState.selectedSundayIso);
@@ -326,6 +409,15 @@ function setupEventListeners() {
   btnPrintPDF.addEventListener('click', () => window.print());
 }
 
+function openAuthModal() {
+  authModal.classList.add('open');
+  loginUsername.focus();
+}
+
+function closeAuthModal() {
+  authModal.classList.remove('open');
+}
+
 function switchTab(viewId) {
   tabSaisieBtn.classList.toggle('active', viewId === 'saisieView');
   tabSyntheseBtn.classList.toggle('active', viewId === 'syntheseView');
@@ -367,7 +459,10 @@ async function confirmPinAndSave() {
     btnConfirmPin.textContent = 'Enregistrement...';
 
     await saveTransaction(appState.pendingTransactionToSave);
-    showToast('Transaction enregistrée avec succès !', 'success');
+    const msg = isDemoMode()
+      ? 'Transaction enregistrée en Mode Démo (Local Storage).'
+      : 'Transaction enregistrée sur Neon Postgres !';
+    showToast(msg, 'success');
     closePinModal();
     await reloadTransactions();
   } catch (err) {

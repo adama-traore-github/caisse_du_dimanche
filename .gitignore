@@ -1,0 +1,27 @@
+# Dépendances
+node_modules/
+.pnpm-store/
+
+# Fichiers de build
+dist/
+dist-ssr/
+*.local
+
+# Variables d'environnement confidentielles
+.env
+.env.local
+.env.*.local
+
+# Logs
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Éditeurs
+.vscode/
+.idea/
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?

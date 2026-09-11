@@ -25,17 +25,31 @@
         </div>
       </div>
 
-      <div class="status-badge" id="storageStatusBadge" title="Mode de stockage">
-        <div class="status-dot" id="statusDot"></div>
-        <span id="statusText">Mode Local Storage</span>
+      <div style="display: flex; gap: 0.75rem; align-items: center;">
+        <button id="btnSwitchMode" class="btn-secondary" style="padding: 0.4rem 0.8rem; font-size: 0.8rem;">
+          👁️ Mode Démo
+        </button>
+
+        <div class="status-badge" id="storageStatusBadge" title="Mode de stockage">
+          <div class="status-dot" id="statusDot"></div>
+          <span id="statusText">Mode Démo (Local Storage)</span>
+        </div>
       </div>
     </div>
   </header>
 
+  <!-- Bannière d'avertissement Mode Démo -->
+  <div id="demoBanner" class="demo-banner">
+    <span>💡 <strong>Mode Démo / Visiteur :</strong> Vos modifications sont enregistrées localement dans votre navigateur et n'altèrent pas la vraie base de données.</span>
+    <button id="btnLoginBanner" class="btn-primary" style="padding: 0.35rem 0.75rem; font-size: 0.78rem;">
+      🔐 Connexion Trésorier
+    </button>
+  </div>
+
   <!-- Conteneur Principal -->
   <main class="main-layout">
 
-    <!-- Onglets de Navigation (Ordre : Saisie -> Synthèse -> Bilan) -->
+    <!-- Onglets de Navigation -->
     <nav class="tabs-nav" aria-label="Navigation principale">
       <button class="tab-btn active" id="tabSaisieBtn" data-target="saisieView">
         📅 Dimanches & Saisie
@@ -95,22 +109,11 @@
               </div>
             </div>
 
-            <div class="form-row-two" style="margin-top: 1rem;">
-              <div class="form-group">
-                <label class="form-label" for="inputRemisA">
-                  <span>👤 Remis à (Trésorier / Gardien)</span>
-                </label>
-                <input type="text" id="inputRemisA" name="remis_a" class="form-input" placeholder="Ex: M. Jean / Sœur Marie" required />
-              </div>
-
-              <div class="form-group">
-                <label class="form-label" for="calcEcartPreview">
-                  <span>⚖️ Écart de la journée</span>
-                </label>
-                <div class="form-input" id="calcEcartPreview" style="background: rgba(255,255,255,0.03); font-weight: 700;">
-                  0 FCFA
-                </div>
-              </div>
+            <div class="form-group" style="margin-top: 1rem;">
+              <label class="form-label" for="inputRemisA">
+                <span>👤 Remis à (Trésorier / Gardien)</span>
+              </label>
+              <input type="text" id="inputRemisA" name="remis_a" class="form-input" placeholder="Ex: M. Jean / Sœur Marie" required />
             </div>
 
             <div class="form-group" style="margin-top: 1rem;">
@@ -238,12 +241,75 @@
 
   </main>
 
-  <!-- MODAL CODE PIN DE SECURITE -->
+  <!-- MODAL AUTHENTIFICATION TRÉSORIER / INSCRIPTION -->
+  <div class="modal-overlay" id="authModal">
+    <div class="modal-box">
+      <div style="display: flex; justify-content: space-between; align-items: center;">
+        <h3 style="font-family: var(--font-heading); font-size: 1.25rem;" id="authModalTitle">🔐 Connexion Espace Trésorerie</h3>
+        <button id="btnCloseAuthModal" style="background: none; border: none; color: var(--text-muted); font-size: 1.2rem; cursor: pointer;">✕</button>
+      </div>
+
+      <div id="authLoginForm">
+        <p style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 1rem;">
+          Connectez-vous avec vos identifiants pour accéder à la base de données Neon Postgres.
+        </p>
+
+        <div class="form-group" style="margin-bottom: 0.85rem;">
+          <label class="form-label" for="loginUsername">Nom d'utilisateur</label>
+          <input type="text" id="loginUsername" class="form-input" placeholder="admin" required />
+        </div>
+
+        <div class="form-group" style="margin-bottom: 1rem;">
+          <label class="form-label" for="loginPassword">Mot de passe</label>
+          <input type="password" id="loginPassword" class="form-input" placeholder="••••••••" required />
+        </div>
+
+        <button class="btn-primary" id="btnSubmitLogin" style="width: 100%; justify-content: center;">
+          Se Connecter à la Base Neon
+        </button>
+
+        <div style="text-align: center; margin-top: 1rem; font-size: 0.82rem; color: var(--text-muted);">
+          Pas encore d'accès ? <a href="#" id="btnShowRegister" style="color: var(--primary); text-decoration: underline;">Demander une autorisation</a>
+        </div>
+      </div>
+
+      <div id="authRegisterForm" style="display: none;">
+        <p style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 1rem;">
+          Faites une demande d'accès. Votre compte sera activé par l'administrateur dans Neon.
+        </p>
+
+        <div class="form-group" style="margin-bottom: 0.85rem;">
+          <label class="form-label" for="regNom">Nom & Prénom</label>
+          <input type="text" id="regNom" class="form-input" placeholder="Ex: Paul Koffi" required />
+        </div>
+
+        <div class="form-group" style="margin-bottom: 0.85rem;">
+          <label class="form-label" for="regUsername">Nom d'utilisateur choisi</label>
+          <input type="text" id="regUsername" class="form-input" placeholder="ex: paul2026" required />
+        </div>
+
+        <div class="form-group" style="margin-bottom: 1rem;">
+          <label class="form-label" for="regPassword">Mot de passe</label>
+          <input type="password" id="regPassword" class="form-input" placeholder="••••••••" required />
+        </div>
+
+        <button class="btn-primary" id="btnSubmitRegister" style="width: 100%; justify-content: center;">
+          Envoyer la Demande d'Accès
+        </button>
+
+        <div style="text-align: center; margin-top: 1rem; font-size: 0.82rem; color: var(--text-muted);">
+          Déjà un compte ? <a href="#" id="btnShowLogin" style="color: var(--primary); text-decoration: underline;">Retour à la connexion</a>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL CODE PIN DE SECURITE SAISIE -->
   <div class="modal-overlay" id="pinModal">
     <div class="modal-box">
-      <h3 style="font-family: var(--font-heading); font-size: 1.25rem;">🔐 Sécurité Responsable</h3>
+      <h3 style="font-family: var(--font-heading); font-size: 1.25rem;">🔐 Confirmation Saisie</h3>
       <p style="font-size: 0.88rem; color: var(--text-muted);">
-        Entrez le code de confirmation pour enregistrer ou modifier ce dimanche. (Code par défaut: <strong>1234</strong>)
+        Confirmez le code de sécurité pour valider l'enregistrement de cette journée. (PIN par défaut : <strong>1234</strong>)
       </p>
 
       <div class="form-group">
