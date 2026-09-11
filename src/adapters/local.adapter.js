@@ -9,11 +9,11 @@ export class LocalStorageAdapter extends BaseStorageAdapter {
   async fetchAll() {
     try {
       const raw = localStorage.getItem(this.storageKey);
-      if (!raw) return this.seedDefaultData();
+      if (!raw) return [];
       return JSON.parse(raw);
     } catch (e) {
       console.error('Erreur lecture LocalStorage:', e);
-      return this.seedDefaultData();
+      return [];
     }
   }
 
@@ -40,21 +40,5 @@ export class LocalStorageAdapter extends BaseStorageAdapter {
     const list = await this.fetchAll();
     const filtered = list.filter(t => t.date_dimanche !== dateDimanche);
     localStorage.setItem(this.storageKey, JSON.stringify(filtered));
-  }
-
-  seedDefaultData() {
-    const demo = [
-      {
-        id: 'demo-1',
-        date_dimanche: '2026-09-06',
-        argent_collecte: 150000,
-        argent_remis: 150000,
-        remis_a: 'M. Jean (Trésorier)',
-        note: 'Première collecte de septembre - Démo',
-        created_at: new Date().toISOString()
-      }
-    ];
-    localStorage.setItem(this.storageKey, JSON.stringify(demo));
-    return demo;
   }
 }
