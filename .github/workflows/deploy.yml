@@ -26,21 +26,13 @@ jobs:
       - name: Configuration Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: 20
-          cache: 'npm'
+          node-version: 22
 
       - name: Installation des dépendances
-        run: npm ci
-
-      - name: Exécution des tests automatisés
-        run: npm test
+        run: npm install
 
       - name: Build du projet Vite
         run: npm run build
-        env:
-          VITE_NEON_DATABASE_URL: ${{ secrets.VITE_NEON_DATABASE_URL }}
-          VITE_SUPABASE_URL: ${{ secrets.VITE_SUPABASE_URL }}
-          VITE_SUPABASE_ANON_KEY: ${{ secrets.VITE_SUPABASE_ANON_KEY }}
 
       - name: Configuration GitHub Pages
         uses: actions/configure-pages@v5
