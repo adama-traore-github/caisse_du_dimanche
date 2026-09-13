@@ -1,5 +1,6 @@
 import { createClient } from '@supabase/supabase-js';
 import { neon } from '@neondatabase/serverless';
+import { hashPassword } from '../utils/security.js';
 
 // Configuration Supabase
 const supabaseUrl = import.meta.env?.VITE_SUPABASE_URL || '';
@@ -66,10 +67,12 @@ export async function loginUser(username, password) {
 
   if (isNeonConfigured && neonSql) {
     try {
+      const hashedPassword = await hashPassword(cleanPassword);
       const rows = await neonSql`
         SELECT id, nom, nom_utilisateur, est_valide
         FROM utilisateurs_autorises
-        WHERE LOWER(nom_utilisateur) = ${cleanUsername} AND mot_de_passe = ${cleanPassword}
+        WHERE LOWER(nom_utilisateur) = ${cleanUsername} 
+          AND (mot_de_passe = ${cleanPassword} OR mot_de_passe = ${hashedPassword})
         LIMIT 1
       `;
 
