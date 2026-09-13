@@ -9,7 +9,8 @@ export const isSupabaseConfigured = Boolean(supabaseUrl && supabaseAnonKey);
 export const supabase = isSupabaseConfigured ? createClient(supabaseUrl, supabaseAnonKey) : null;
 
 // Configuration Neon Database
-const neonDbUrl = import.meta.env?.VITE_NEON_DATABASE_URL || import.meta.env?.VITE_DATABASE_URL || '';
+const DEFAULT_NEON_URL = 'postgresql://neondb_owner:npg_aczLUC0KgAj8@ep-muddy-thunder-aejta0d4-pooler.c-2.us-east-2.aws.neon.tech/neondb?sslmode=require';
+const neonDbUrl = import.meta.env?.VITE_NEON_DATABASE_URL || import.meta.env?.VITE_DATABASE_URL || DEFAULT_NEON_URL;
 export const isNeonConfigured = Boolean(neonDbUrl);
 export const neonSql = isNeonConfigured ? neon(neonDbUrl) : null;
 
