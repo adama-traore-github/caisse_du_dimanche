@@ -1,4 +1,5 @@
 import { BaseStorageAdapter } from './base.adapter.js';
+import { normalizeIsoDate } from '../utils/dates.js';
 
 export class LocalStorageAdapter extends BaseStorageAdapter {
   constructor(storageKey = 'caisse_du_dimanche_demo_transactions') {
@@ -10,7 +11,11 @@ export class LocalStorageAdapter extends BaseStorageAdapter {
     try {
       const raw = localStorage.getItem(this.storageKey);
       if (!raw) return [];
-      return JSON.parse(raw);
+      const list = JSON.parse(raw);
+      return list.map(t => ({
+        ...t,
+        date_dimanche: normalizeIsoDate(t.date_dimanche)
+      }));
     } catch (e) {
       console.error('Erreur lecture LocalStorage:', e);
       return [];
@@ -19,16 +24,17 @@ export class LocalStorageAdapter extends BaseStorageAdapter {
 
   async save(payload) {
     const list = await this.fetchAll();
-    const existingIndex = list.findIndex(t => t.date_dimanche === payload.date_dimanche);
+    const cleanDate = normalizeIsoDate(payload.date_dimanche);
+    const existingIndex = list.findIndex(t => t.date_dimanche === cleanDate);
     
     let savedItem;
     const nowIso = new Date().toISOString();
 
     if (existingIndex >= 0) {
-      savedItem = { ...list[existingIndex], ...payload, updated_at: nowIso };
+      savedItem = { ...list[existingIndex], ...payload, date_dimanche: cleanDate, updated_at: nowIso };
       list[existingIndex] = savedItem;
     } else {
-      savedItem = { id: crypto.randomUUID(), created_at: nowIso, updated_at: nowIso, ...payload };
+      savedItem = { id: crypto.randomUUID(), created_at: nowIso, updated_at: nowIso, ...payload, date_dimanche: cleanDate };
       list.push(savedItem);
     }
 

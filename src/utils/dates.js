@@ -39,6 +39,22 @@ export function formatISODate(date) {
 }
 
 /**
+ * Normalise toute date (Date JS, ISO string avec heure, Timestamp DB) en YYYY-MM-DD
+ * @param {Date|string} dateVal 
+ * @returns {string}
+ */
+export function normalizeIsoDate(dateVal) {
+    if (!dateVal) return '';
+    if (typeof dateVal === 'string') {
+        return dateVal.split('T')[0].trim();
+    }
+    if (dateVal instanceof Date) {
+        return formatISODate(dateVal);
+    }
+    return String(dateVal).split('T')[0].slice(0, 10).trim();
+}
+
+/**
  * Génère la liste des dimanches depuis le 1er dimanche de septembre sur une période de N mois
  * @param {number} startYear 
  * @param {number} totalMonths

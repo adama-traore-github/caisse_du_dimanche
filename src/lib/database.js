@@ -1,6 +1,7 @@
 import { createClient } from '@supabase/supabase-js';
 import { neon } from '@neondatabase/serverless';
 import { hashPassword } from '../utils/security.js';
+import { normalizeIsoDate } from '../utils/dates.js';
 
 // Configuration Supabase
 const supabaseUrl = import.meta.env?.VITE_SUPABASE_URL || '';
@@ -143,7 +144,11 @@ export async function fetchTransactions() {
     try {
       const raw = localStorage.getItem(LOCAL_STORAGE_KEY);
       if (!raw) return [];
-      return JSON.parse(raw);
+      const list = JSON.parse(raw);
+      return list.map(t => ({
+        ...t,
+        date_dimanche: normalizeIsoDate(t.date_dimanche)
+      }));
     } catch (e) {
       return [];
     }
@@ -158,6 +163,7 @@ export async function fetchTransactions() {
       `;
       return rows.map(r => ({
         ...r,
+        date_dimanche: normalizeIsoDate(r.date_dimanche),
         argent_collecte: Number(r.argent_collecte) || 0,
         argent_remis: Number(r.argent_remis) || 0
       }));
@@ -174,7 +180,10 @@ export async function fetchTransactions() {
       .order('date_dimanche', { ascending: false });
 
     if (error) throw new Error(`Erreur Supabase: ${error.message}`);
-    return data || [];
+    return (data || []).map(r => ({
+      ...r,
+      date_dimanche: normalizeIsoDate(r.date_dimanche)
+    }));
   }
 
   return [];
@@ -185,7 +194,7 @@ export async function fetchTransactions() {
  */
 export async function saveTransaction(transactionData) {
   const payload = {
-    date_dimanche: transactionData.date_dimanche,
+    date_dimanche: normalizeIsoDate(transactionData.date_dimanche),
     argent_collecte: Number(transactionData.argent_collecte) || 0,
     argent_remis: Number(transactionData.argent_remis) || 0,
     remis_a: (transactionData.remis_a || '').trim(),

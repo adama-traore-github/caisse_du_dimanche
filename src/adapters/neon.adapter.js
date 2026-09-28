@@ -1,5 +1,6 @@
 import { neon } from '@neondatabase/serverless';
 import { BaseStorageAdapter } from './base.adapter.js';
+import { normalizeIsoDate } from '../utils/dates.js';
 
 export class NeonStorageAdapter extends BaseStorageAdapter {
   constructor(dbUrl) {
@@ -19,6 +20,7 @@ export class NeonStorageAdapter extends BaseStorageAdapter {
       `;
       return rows.map(r => ({
         ...r,
+        date_dimanche: normalizeIsoDate(r.date_dimanche),
         argent_collecte: Number(r.argent_collecte) || 0,
         argent_remis: Number(r.argent_remis) || 0
       }));
@@ -30,9 +32,10 @@ export class NeonStorageAdapter extends BaseStorageAdapter {
 
   async save(payload) {
     try {
+      const cleanDate = normalizeIsoDate(payload.date_dimanche);
       const rows = await this.sql`
         INSERT INTO transactions_dimanche (date_dimanche, argent_collecte, argent_remis, remis_a, note, updated_at)
-        VALUES (${payload.date_dimanche}, ${payload.argent_collecte}, ${payload.argent_remis}, ${payload.remis_a}, ${payload.note}, NOW())
+        VALUES (${cleanDate}, ${payload.argent_collecte}, ${payload.argent_remis}, ${payload.remis_a}, ${payload.note}, NOW())
         ON CONFLICT (date_dimanche) DO UPDATE SET
           argent_collecte = EXCLUDED.argent_collecte,
           argent_remis = EXCLUDED.argent_remis,
@@ -41,7 +44,10 @@ export class NeonStorageAdapter extends BaseStorageAdapter {
           updated_at = NOW()
         RETURNING *
       `;
-      return rows[0];
+      return {
+        ...rows[0],
+        date_dimanche: normalizeIsoDate(rows[0].date_dimanche)
+      };
     } catch (e) {
       console.error('Erreur Neon Storage save:', e);
       throw new Error(`Échec de sauvegarde sur Neon Postgres: ${e.message}`);

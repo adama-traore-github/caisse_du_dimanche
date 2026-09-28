@@ -2,7 +2,9 @@ import {
   generateSundaysList,
   formatMoney,
   formatMonthName,
-  formatISODate
+  formatISODate,
+  normalizeIsoDate,
+  parseISODate
 } from './utils/dates.js';
 
 import {
@@ -144,8 +146,43 @@ async function reloadTransactions() {
     const list = await fetchTransactions();
     appState.transactionsMap.clear();
     list.forEach(t => {
-      appState.transactionsMap.set(t.date_dimanche, t);
+      const normDate = normalizeIsoDate(t.date_dimanche);
+      appState.transactionsMap.set(normDate, {
+        ...t,
+        date_dimanche: normDate
+      });
     });
+
+    const existingIsoSet = new Set(appState.sundaysList.map(s => s.isoDate));
+    appState.transactionsMap.forEach((t, isoDate) => {
+      if (isoDate && !existingIsoSet.has(isoDate)) {
+        const d = parseISODate(isoDate);
+        if (!isNaN(d.getTime())) {
+          const monthKey = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
+          const formattedFull = new Intl.DateTimeFormat('fr-FR', {
+            weekday: 'long',
+            day: 'numeric',
+            month: 'long',
+            year: 'numeric'
+          }).format(d);
+          const formattedShort = new Intl.DateTimeFormat('fr-FR', {
+            day: 'numeric',
+            month: 'short'
+          }).format(d);
+
+          appState.sundaysList.push({
+            isoDate,
+            monthKey,
+            label: formattedFull.charAt(0).toUpperCase() + formattedFull.slice(1),
+            formattedShort,
+            dateObj: d
+          });
+        }
+      }
+    });
+
+    appState.sundaysList.sort((a, b) => a.isoDate.localeCompare(b.isoDate));
+
     updateGlobalStats();
     renderSundaysSidebar();
     renderMonthlyTable();
@@ -181,7 +218,21 @@ function updateGlobalStats() {
 }
 
 function renderSyntheseQuickView() {
-  const latestIso = appState.selectedSundayIso || getInitialSundayIso(appState.sundaysList);
+  let latestIso = appState.selectedSundayIso;
+
+  if (!latestIso || !appState.transactionsMap.has(latestIso)) {
+    const filledDates = Array.from(appState.transactionsMap.entries())
+      .filter(([_, t]) => Number(t.argent_collecte) > 0 || Number(t.argent_remis) > 0)
+      .map(([date]) => date)
+      .sort((a, b) => b.localeCompare(a));
+
+    if (filledDates.length > 0) {
+      latestIso = filledDates[0];
+    } else {
+      latestIso = getInitialSundayIso(appState.sundaysList);
+    }
+  }
+
   const sundayObj = appState.sundaysList.find(s => s.isoDate === latestIso);
   const t = appState.transactionsMap.get(latestIso);
 
@@ -221,7 +272,7 @@ function renderSundaysSidebar() {
 
   appState.sundaysList.forEach(sunday => {
     const transaction = appState.transactionsMap.get(sunday.isoDate);
-    const isCompleted = Boolean(transaction && (transaction.argent_collecte > 0 || transaction.argent_remis > 0));
+    const isCompleted = Boolean(transaction && (Number(transaction.argent_collecte) > 0 || Number(transaction.argent_remis) > 0));
 
     const btn = document.createElement('button');
     btn.className = `sunday-item-btn ${sunday.isoDate === appState.selectedSundayIso ? 'active' : ''}`;
@@ -231,7 +282,7 @@ function renderSundaysSidebar() {
       <div>
         <div class="sunday-date-label">${sunday.formattedShort}</div>
         <div style="font-size:0.75rem; color:var(--text-muted); margin-top:2px;">
-          ${transaction ? formatMoney(transaction.argent_collecte) : 'Non renseigné'}
+          ${isCompleted ? formatMoney(transaction.argent_collecte) : 'Non renseigné'}
         </div>
       </div>
       <span class="sunday-badge ${isCompleted ? 'completed' : 'pending'}">
@@ -244,7 +295,8 @@ function renderSundaysSidebar() {
   });
 }
 
-function selectSunday(isoDate) {
+function selectSunday(rawIsoDate) {
+  const isoDate = normalizeIsoDate(rawIsoDate);
   appState.selectedSundayIso = isoDate;
   const sundayObj = appState.sundaysList.find(s => s.isoDate === isoDate);
   
@@ -271,6 +323,11 @@ function selectSunday(isoDate) {
 
   renderSundaysSidebar();
   renderSyntheseQuickView();
+
+  const activeBtn = sundaysListContainer.querySelector('.sunday-item-btn.active');
+  if (activeBtn) {
+    activeBtn.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+  }
 }
 
 // --- Événements Navigation et Formulaires ---

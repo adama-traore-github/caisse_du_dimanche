@@ -361,6 +361,31 @@ body {
   max-height: 480px;
   overflow-y: auto;
   padding-right: 0.25rem;
+  scroll-behavior: smooth;
+}
+
+.sundays-list::-webkit-scrollbar {
+  width: 6px;
+}
+
+.sundays-list::-webkit-scrollbar-track {
+  background: rgba(255, 255, 255, 0.03);
+  border-radius: var(--radius-sm);
+}
+
+.sundays-list::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.2);
+  border-radius: var(--radius-sm);
+}
+
+.sundays-list::-webkit-scrollbar-thumb:hover {
+  background: var(--primary);
+}
+
+@media (max-width: 768px) {
+  .sundays-list {
+    max-height: 275px;
+  }
 }
 
 .sunday-item-btn {
