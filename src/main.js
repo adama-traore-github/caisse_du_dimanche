@@ -259,7 +259,7 @@ function renderSyntheseQuickView() {
         <div style="font-size: 1.1rem; font-weight: 700; color: var(--amber);">${formatMoney(t.argent_remis)}</div>
       </div>
       <div style="background: rgba(255,255,255,0.03); padding: 0.75rem; border-radius: var(--radius-md);">
-        <div style="font-size: 0.78rem; color: var(--text-muted);">Écart du jour</div>
+        <div style="font-size: 0.78rem; color: var(--text-muted);">Reste en caisse</div>
         <div style="font-size: 1.1rem; font-weight: 700;">${formatMoney(ecart)}</div>
       </div>
     </div>
@@ -639,7 +639,7 @@ function exportMonthlyCSV() {
   const monthKey = appState.selectedMonthKey;
   const sundaysInMonth = appState.sundaysList.filter(s => s.monthKey === monthKey);
 
-  let csvContent = "Date;Collecte (FCFA);Remis (FCFA);Ecart (FCFA);Remis A;Observations\n";
+  let csvContent = "Date;Collecte (FCFA);Remis (FCFA);Reste en caisse (FCFA);Remis A;Observations\n";
 
   sundaysInMonth.forEach(sunday => {
     const t = appState.transactionsMap.get(sunday.isoDate);

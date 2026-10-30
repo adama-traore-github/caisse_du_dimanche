@@ -13,7 +13,7 @@ Application web responsive, hautement sécurisée et optimisée pour le suivi, l
 
 - **📊 Synthèse Générale** :
   - Vue d'ensemble mobile-first avec 3 cartes principales : **Total Collecté**, **Total Remis**, et **Reste en Caisse**.
-  - Aperçu rapide du dernier dimanche enregistré.
+  - Aperçu rapide du dernier dimanche enregistré (Collecté, Remis et Reste en caisse).
 
 - **📋 Bilan Mensuel** :
   - Filtrage des données par mois (Septembre, Octobre, etc.).
